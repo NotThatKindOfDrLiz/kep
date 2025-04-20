@@ -80,13 +80,14 @@
   <div id="agenda-list"></div>
 
   <script type="module">
-    import {
+    import nostr from "https://cdn.jsdelivr.net/npm/nostr-tools@2.12.0/+esm";
+    const {
       relayInit,
       generatePrivateKey,
       getPublicKey,
       getEventHash,
       signEvent
-    } from "https://cdn.jsdelivr.net/npm/nostr-tools@2.12.0/+esm";
+    } = nostr;
 
     const relayUrl = "wss://relay.nostr.band";
     const agendaTag = "agenda";
@@ -101,8 +102,8 @@
     async function start() {
       await relay.connect();
 
-      // For this simple demo we generate a fresh keypair on every page‑load.
-      // In a production app you’d derive this from a user’s NIP‑07 wallet or similar.
+      // For this simple demo we generate a fresh keypair on every page​‑load.
+      // In production you'd use a user wallet (NIP‑07) or persistent storage.
       privKey = generatePrivateKey();
       pubKey = getPublicKey(privKey);
 
@@ -115,12 +116,14 @@
       const container = document.getElementById("agenda-list");
       container.innerHTML = "";
 
-      const sub = relay.sub([{
-        kinds: [1],
-        "#t": [agendaTag],
-        limit: 50,
-        since: 0
-      }]);
+      const sub = relay.sub([
+        {
+          kinds: [1],
+          "#t": [agendaTag],
+          limit: 50,
+          since: 0
+        }
+      ]);
 
       sub.on("event", (event) => {
         renderAgendaItem(event, container);
@@ -139,8 +142,7 @@
       const div = document.createElement("div");
       div.className = "agenda-item";
       div.innerHTML =
-        `<p>${content}</p>
-         <div class="meta">From: ${from} • ${when}</div>`;
+        `<p>${content}</p>\n         <div class="meta">From: ${from} • ${when}</div>`;
       container.prepend(div); // newest on top
     }
 
