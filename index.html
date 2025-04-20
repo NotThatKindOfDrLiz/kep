@@ -64,11 +64,18 @@
   <h2>Submitted Agenda Items</h2>
   <div id="agenda-list">Loading...</div>
 
-  <!-- WORKING UMD BUNDLE -->
-  <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
-  <script>
+  <!-- JavaScript using modern ESM-based nostr-tools -->
+  <script type="module">
+    import {
+      relayInit,
+      generatePrivateKey,
+      getPublicKey,
+      getEventHash,
+      signEvent,
+    } from "https://esm.sh/nostr-tools@2.1.3";
+
     const relayUrl = "wss://relay.nostr.band";
-    const relay = window.NostrTools.relayInit(relayUrl);
+    const relay = relayInit(relayUrl);
     const agendaTag = "agenda";
 
     let privKey, pubKey;
@@ -77,8 +84,8 @@
       await relay.connect();
       console.log(`Connected to ${relayUrl}`);
 
-      privKey = window.NostrTools.generatePrivateKey();
-      pubKey = window.NostrTools.getPublicKey(privKey);
+      privKey = generatePrivateKey();
+      pubKey = getPublicKey(privKey);
 
       fetchAgendaItems();
     }
@@ -88,8 +95,8 @@
         {
           kinds: [1],
           "#t": [agendaTag],
-          limit: 20
-        }
+          limit: 20,
+        },
       ]);
 
       const container = document.getElementById("agenda-list");
@@ -97,7 +104,7 @@
 
       sub.on("event", (event) => {
         const content = event.content;
-        const from = event.tags.find(tag => tag[0] === "p")?.[1] || "Anonymous";
+        const from = event.tags.find((tag) => tag[0] === "p")?.[1] || "Anonymous";
         const when = new Date(event.created_at * 1000).toLocaleString();
 
         const div = document.createElement("div");
@@ -125,8 +132,8 @@
         event.tags.push(["p", name]);
       }
 
-      event.id = window.NostrTools.getEventHash(event);
-      event.sig = window.NostrTools.signEvent(event, privKey);
+      event.id = getEventHash(event);
+      event.sig = signEvent(event, privKey);
 
       try {
         await relay.publish(event);
@@ -139,7 +146,10 @@
       }
     }
 
-    document.getElementById("agenda-form").addEventListener("submit", submitAgendaItem);
+    document
+      .getElementById("agenda-form")
+      .addEventListener("submit", submitAgendaItem);
+
     connectRelay();
   </script>
 </body>
