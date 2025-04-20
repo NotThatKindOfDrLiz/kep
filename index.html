@@ -66,10 +66,16 @@
 
   <!-- Load nostr-tools via JSDelivr as ES module -->
 <script type="module">
-  import * as nostrTools from 'https://cdn.jsdelivr.net/npm/nostr-tools@2.1.3/+esm';
+  import {
+    relayInit,
+    generatePrivateKey,
+    getPublicKey,
+    getEventHash,
+    signEvent
+  } from 'https://cdn.jsdelivr.net/npm/nostr-tools@2.1.3/+esm';
 
   const relayUrl = "wss://relay.nostr.band";
-  const relay = nostrTools.relayInit(relayUrl);
+  const relay = relayInit(relayUrl);
   const agendaTag = "agenda";
 
   let privKey, pubKey;
@@ -78,8 +84,8 @@
     await relay.connect();
     console.log(`Connected to ${relayUrl}`);
 
-    privKey = nostrTools.generatePrivateKey();
-    pubKey = nostrTools.getPublicKey(privKey);
+    privKey = generatePrivateKey();
+    pubKey = getPublicKey(privKey);
 
     fetchAgendaItems();
   }
@@ -126,8 +132,8 @@
       event.tags.push(["p", name]);
     }
 
-    event.id = nostrTools.getEventHash(event);
-    event.sig = nostrTools.signEvent(event, privKey);
+    event.id = getEventHash(event);
+    event.sig = signEvent(event, privKey);
 
     try {
       await relay.publish(event);
@@ -143,9 +149,3 @@
   document.getElementById("agenda-form").addEventListener("submit", submitAgendaItem);
   connectRelay();
 </script>
-
-
-  <!-- Load the app logic -->
-  <script src="app.js" type="module"></script>
-</body>
-</html>
