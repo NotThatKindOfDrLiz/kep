@@ -65,17 +65,10 @@
   <div id="agenda-list">Loading...</div>
 
   <!-- Load nostr-tools via JSDelivr as ES module -->
-<script type="module">
-  import {
-    relayInit,
-    generatePrivateKey,
-    getPublicKey,
-    getEventHash,
-    signEvent
-  } from 'https://cdn.jsdelivr.net/npm/nostr-tools@2.1.3/+esm';
-
+<script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+<script>
   const relayUrl = "wss://relay.nostr.band";
-  const relay = relayInit(relayUrl);
+  const relay = window.NostrTools.relayInit(relayUrl);
   const agendaTag = "agenda";
 
   let privKey, pubKey;
@@ -84,8 +77,8 @@
     await relay.connect();
     console.log(`Connected to ${relayUrl}`);
 
-    privKey = generatePrivateKey();
-    pubKey = getPublicKey(privKey);
+    privKey = window.NostrTools.generatePrivateKey();
+    pubKey = window.NostrTools.getPublicKey(privKey);
 
     fetchAgendaItems();
   }
@@ -132,8 +125,8 @@
       event.tags.push(["p", name]);
     }
 
-    event.id = getEventHash(event);
-    event.sig = signEvent(event, privKey);
+    event.id = window.NostrTools.getEventHash(event);
+    event.sig = window.NostrTools.signEvent(event, privKey);
 
     try {
       await relay.publish(event);
