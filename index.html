@@ -3,46 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nostr Agenda Collector</title>
+  <title>Kep – Nostr Agenda Collector</title>
   <style>
+    :root {
+      --brand: #44728F;
+    }
     body {
-      font-family: sans-serif;
-      margin: 2rem;
-      max-width: 600px;
+      font-family: system-ui, sans-serif;
+      margin: 2rem auto;
+      max-width: 640px;
       line-height: 1.6;
+      padding: 0 1rem;
     }
     h1 {
-      font-size: 1.8rem;
+      font-size: 1.9rem;
     }
-    label, input, textarea {
+    label,
+    input,
+    textarea {
       display: block;
       width: 100%;
       margin-bottom: 0.5rem;
     }
     textarea {
-      height: 100px;
+      height: 110px;
     }
     button {
-      padding: 0.5rem 1rem;
-      background-color: #44728F;
-      color: white;
+      padding: 0.6rem 1.2rem;
+      background-color: var(--brand);
+      color: #fff;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      font-size: 1rem;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     .agenda-item {
-      border-bottom: 1px solid #ccc;
-      padding: 0.5rem 0;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0.7rem 0;
     }
     .meta {
       font-size: 0.8rem;
-      color: gray;
+      color: #666;
     }
     .note {
       font-size: 0.85rem;
       color: #888;
-      margin-top: -0.5rem;
-      margin-bottom: 1rem;
+      margin-top: -0.25rem;
+      margin-bottom: 1.25rem;
+    }
+    #agenda-list:empty::before {
+      content: "No agenda items yet. Be the first to add one!";
+      color: #555;
     }
   </style>
 </head>
@@ -53,16 +68,16 @@
 
   <form id="agenda-form">
     <label for="name">Your Name (optional)</label>
-    <input type="text" id="name" placeholder="e.g. Liz" />
+    <input type="text" id="name" placeholder="e.g. Liz" autocomplete="name" />
 
     <label for="agenda">Agenda Item</label>
     <textarea id="agenda" required placeholder="What should we talk about?"></textarea>
 
-    <button type="submit">Submit</button>
+    <button type="submit" id="submit-btn">Submit</button>
   </form>
 
   <h2>Submitted Agenda Items</h2>
-  <div id="agenda-list">Loading...</div>
+  <div id="agenda-list"></div>
 
   <script type="module">
     import {
@@ -71,7 +86,7 @@
       getPublicKey,
       getEventHash,
       signEvent
-    } from "https://esm.sh/nostr-tools@2.1.3";
+    } from "https://esm.sh/nostr-tools@2.4.1?bundle";
 
     const relayUrl = "wss://relay.nostr.band";
     const agendaTag = "agenda";
@@ -79,42 +94,68 @@
 
     let privKey, pubKey;
 
-    async function connectRelay() {
+    // ---- Relay connection helpers ----
+    relay.on("error", () => console.warn(`⚠️ Failed to connect to ${relayUrl}`));
+    relay.on("connect", () => console.log(`✅ Connected to ${relayUrl}`));
+
+    async function start() {
       await relay.connect();
+
+      // For this simple demo we generate a fresh keypair on every page‑load.
+      // In a production app you’d derive this from a user’s NIP‑07 wallet or similar.
       privKey = generatePrivateKey();
       pubKey = getPublicKey(privKey);
+
+      // Immediately fetch existing agenda items
       fetchAgendaItems();
     }
 
-    async function fetchAgendaItems() {
-      const sub = relay.sub([
-        {
-          kinds: [1],
-          "#t": [agendaTag],
-          limit: 20
-        }
-      ]);
-
+    // ---- Read agenda items ----
+    function fetchAgendaItems() {
       const container = document.getElementById("agenda-list");
       container.innerHTML = "";
 
-      sub.on("event", (event) => {
-        const content = event.content;
-        const from = event.tags.find(tag => tag[0] === "p")?.[1] || "Anonymous";
-        const when = new Date(event.created_at * 1000).toLocaleString();
+      const sub = relay.sub([{
+        kinds: [1],
+        "#t": [agendaTag],
+        limit: 50,
+        since: 0
+      }]);
 
-        const div = document.createElement("div");
-        div.className = "agenda-item";
-        div.innerHTML = `<p>${content}</p><div class="meta">From: ${from} • ${when}</div>`;
-        container.appendChild(div);
+      sub.on("event", (event) => {
+        renderAgendaItem(event, container);
+      });
+
+      sub.on("eose", () => {
+        sub.unsub();
       });
     }
 
+    function renderAgendaItem(event, container) {
+      const content = event.content;
+      const from = event.tags.find(tag => tag[0] === "p")?.[1] || "Anonymous";
+      const when = new Date(event.created_at * 1000).toLocaleString();
+
+      const div = document.createElement("div");
+      div.className = "agenda-item";
+      div.innerHTML =
+        `<p>${content}</p>
+         <div class="meta">From: ${from} • ${when}</div>`;
+      container.prepend(div); // newest on top
+    }
+
+    // ---- Publish agenda items ----
     async function submitAgendaItem(e) {
       e.preventDefault();
+      const submitBtn = document.getElementById("submit-btn");
+      submitBtn.disabled = true;
+
       const name = document.getElementById("name").value.trim();
       const agenda = document.getElementById("agenda").value.trim();
-      if (!agenda) return;
+      if (!agenda) {
+        submitBtn.disabled = false;
+        return;
+      }
 
       const event = {
         kind: 1,
@@ -123,27 +164,32 @@
         content: agenda,
         pubkey: pubKey
       };
-
-      if (name) {
-        event.tags.push(["p", name]);
-      }
+      if (name) event.tags.push(["p", name]);
 
       event.id = getEventHash(event);
       event.sig = signEvent(event, privKey);
 
-      try {
-        await relay.publish(event);
+      const pub = relay.publish(event);
+
+      pub.on("ok", () => {
         document.getElementById("agenda").value = "";
-        alert("Agenda submitted!");
-        fetchAgendaItems();
-      } catch (err) {
-        console.error("Publish failed:", err);
-        alert("Something went wrong.");
-      }
+        fetchAgendaItems(); // refresh list
+        submitBtn.disabled = false;
+      });
+
+      pub.on("failed", (reason) => {
+        console.error("Publish failed:", reason);
+        alert("Something went wrong while publishing. Please try again.");
+        submitBtn.disabled = false;
+      });
     }
 
-    document.getElementById("agenda-form").addEventListener("submit", submitAgendaItem);
-    connectRelay();
+    // ---- Init ----
+    document
+      .getElementById("agenda-form")
+      .addEventListener("submit", submitAgendaItem);
+
+    start();
   </script>
 </body>
 </html>
