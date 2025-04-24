@@ -58,7 +58,7 @@ Kep helps distributed, diverse teams co-create meeting agendas with ease and int
 
 ## 🤝 Contributing
 
-We welcome accessibility audits, feature suggestions, and code contributions. Please see [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`ISSUE_TEMPLATE.md`](./.github/ISSUE_TEMPLATE.md) to get started.
+We welcome accessibility audits, feature suggestions, and code contributions. Please see [`CONTRIBUTING.md`](./CONTRIBUTING.md) to get started.
 
 ---
 
