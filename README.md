@@ -42,7 +42,7 @@ Kep helps distributed, diverse teams co-create meeting agendas with ease and int
 - Organization-wide intelligence layer
 - Cashu zaps and micro-rewards
 
-[Read the full Kep Overview & Roadmap](./docs/Kep App Overview and Roadmap.md)
+[Read the full Kep Overview & Roadmap](./docs/Kep%20App%20Overview%20and%20Roadmap.md)
 
 ---
 
