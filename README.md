@@ -64,7 +64,7 @@ We welcome accessibility audits, feature suggestions, and code contributions. Pl
 
 ## 📜 License
 
-MIT License — see [`LICENSE`](./LICENSE) for full text.
+Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0) — see [`LICENSE`](./LICENSE) for full text.
 
 ---
 
