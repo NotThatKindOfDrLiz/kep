@@ -97,4 +97,4 @@ Kep is designed to be extended in the future with:
 
 ## License
 
-MIT
+Creative Commons Attribution-NonCommercial 4.0 International
