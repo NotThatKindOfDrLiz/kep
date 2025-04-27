@@ -49,7 +49,7 @@ build better collaboration habits and stronger communities.
   - Peer-to-peer recognition
   - Decentralized gratitude economy
 - **Collective Intelligence Tools Integration**:
-  - Connect to [GetHiveWise](https://gethivewise.com/) or [Washi](https://washi.app/) for team decision-making insights
+  - Connect to [GetHiveWise](https://gethivewise.com/) or [Washi](https://washi.com/) for team decision-making insights
 - **Custom relay clustering** by organization
 - **Multilingual interface** support
 - **Optional self-hosted deployments**
